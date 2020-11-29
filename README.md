@@ -6,7 +6,7 @@ Se va crea o aplicatie de tip client server care va reproduce jocul de cuvinte �
   - ✔️ Multithreaded Server
   - ✔️ Independet Clients
   - ✔️ Connecting only 2 clients
-  - Client B wait for Client A word and description
+  - ✔️ Client B wait for Client A word and description
   - Client B guessed a letter or not
   - Client B guessed the word or not
   - Client A receive at the final if the Client B won the game or not
