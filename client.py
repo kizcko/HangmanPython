@@ -22,7 +22,7 @@ while True:
         ClientSocket.send(str.encode(Input))
         Input = input('Descriere: ')
         ClientSocket.send(str.encode(Input))
-
+        print(ClientSocket.recv(1024).decode('utf-8'))
     if clientType == '2':
         msg = ClientSocket.recv(1024).decode('utf-8')
         if msg == 'Waiting for a word and description . . . ':
@@ -31,7 +31,16 @@ while True:
         else:
             print(ClientSocket.recv(1024).decode('utf-8'))
 
-
+        InputLetter = input(ClientSocket.recv(1024).decode('utf-8'))
+        ClientSocket.send(str.encode(InputLetter))
+        while True:
+            msg = ClientSocket.recv(1024).decode('utf-8')
+            if msg == 'Ai ghicit cuvantul' or msg == 'Ai pierdut':
+                print(msg)
+                break
+            print(msg)
+            InputLetter = input(ClientSocket.recv(1024).decode('utf-8'))
+            ClientSocket.send(str.encode(InputLetter))
 
 
 

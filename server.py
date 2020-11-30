@@ -31,6 +31,15 @@ def multi_threaded_client(connection):
     descriere = connection.recv(2048).decode('utf-8')
     confirmCuvant = 1
     word_completion = "_" * len(cuvant)
+    tries = 6
+    guessed = False
+    while True:
+        if guessed == True:
+            connection.sendall(str.encode('A ghiciti cuvantul'))
+            break
+        if tries == 0 and guessed == False:
+            connection.sendall(str.encode('Nu a ghicit cuvantul'))
+            break
 
 
 def multi_threaded_client2(connection):
@@ -43,6 +52,48 @@ def multi_threaded_client2(connection):
         if confirmCuvant > 0:
             connection.sendall(str.encode('Cuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere))
             break
+
+    while tries > 0 and not guessed:
+        connection.sendall(str.encode('Litera: '))
+        guess = connection.recv(2048).decode('utf-8').upper()
+        if len(guess) == 1:
+            if guess in guessedLetters:
+                connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere + '\nDeja incercat'))
+            elif guess not in cuvant :
+                tries -= 1
+                guessedLetters.append(guess)
+                connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere + '\nLitera gresita'))
+            else:
+                guessedLetters.append(guess)
+                wordToList = list(word_completion)
+                for i in range(len(cuvant)):
+                    if cuvant[i] == guess:
+                        wordToList[i] = guess.upper()
+                word_completion = "".join(wordToList)
+                connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere))
+        if len(guess) == len(cuvant):
+            if guess in guessedWords:
+                connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere + '\nDeja incercat'))
+            elif guess != cuvant :
+                tries -= 1
+                guessedWords.append(guess)
+                connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere + '\nCuvant gresit'))
+            else:
+                word_completion = cuvant
+                connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere))
+
+        if len(guess) > 1:
+            connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(tries) + '\nDescriere: ' + descriere + '\nPoti pune o litera sau tot cuvantul doar'))
+        if word_completion == cuvant:
+            guessed = True
+
+
+    if guessed == True:
+        connection.sendall(str.encode('Ai ghicit cuvantul'))
+    else:
+        connection.sendall(str.encode('Ai pierdut'))
+
+
 
 
 while True:
