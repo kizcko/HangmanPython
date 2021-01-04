@@ -6,6 +6,7 @@ import sys
 from subprocess import call
 
 ServerSideSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ServerSideSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 host = '127.0.0.1'
 port = 1233
 ThreadCount = 0
@@ -66,6 +67,7 @@ def game_client1(connection):
                 play1_exit = 1
                 ThreadCount -= 1
                 print('Thread Number: ' + str(ThreadCount))
+                reset()
                 return
             if guessed:
                 connection.sendall(str.encode('\nA ghiciti cuvantul'))
