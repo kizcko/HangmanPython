@@ -20,6 +20,8 @@ guessedWords = []
 play1 = 1
 play2 = 1
 score = 0
+play2_exit = 0
+play1_exit = 0
 
 try:
     ServerSideSocket.bind((host, port))
@@ -27,7 +29,7 @@ except socket.error as e:
     print(str(e))
 
 print('Socket is listening..')
-ServerSideSocket.listen(5)
+ServerSideSocket.listen(2)
 
 
 def reset():
@@ -45,7 +47,6 @@ def reset():
 def init_send_cuvant(connection):
     global cuvant, descriere, confirmCuvant, word_completion, tries, guessed, play1
 
-
     cuvant = connection.recv(2048).decode('utf-8').upper()
     descriere = connection.recv(2048).decode('utf-8')
     confirmCuvant = 1
@@ -54,17 +55,19 @@ def init_send_cuvant(connection):
     guessed = False
 
 
-def multi_threaded_client(connection):
-
-    global play1, score, confirmCuvant
-    response = '1'
-    connection.sendall(str.encode(response))
-    while play2 > 0:
+def game_client1(connection):
+    global guessed, tries, play2_exit, play1_exit, ThreadCount
+    while True:
         init_send_cuvant(connection)
 
         while True:
-
-            if guessed == True:
+            if play2_exit == 1:
+                connection.sendall(str.encode('\nS-a deconectat jucatorul'))
+                play1_exit = 1
+                ThreadCount -= 1
+                print('Thread Number: ' + str(ThreadCount))
+                return
+            if guessed:
                 connection.sendall(str.encode('\nA ghiciti cuvantul'))
                 break
             if tries == 0 and guessed == False:
@@ -72,12 +75,16 @@ def multi_threaded_client(connection):
                 break
 
 
-def multi_threaded_client2(connection):
-    global guessedLetters, tries, word_completion, guessedWords, guessed, play2
-    response = '2'
+def multi_threaded_client(connection):
+    global play1, score, confirmCuvant, play2
+    response = '1'
     connection.sendall(str.encode(response))
-    score = 0
+    game_client1(connection)
+    connection.close
 
+
+def game_client2(connection):
+    global word_completion, guessed, score, tries, play2, ThreadCount, play2_exit
     while True:
         if confirmCuvant == 0:
             time.sleep(1)
@@ -96,8 +103,15 @@ def multi_threaded_client2(connection):
         while tries > 0 and not guessed:
             connection.sendall(str.encode('\nLitera: '))
             time.sleep(1)
-
             guess = connection.recv(2048).decode('utf-8').upper()
+
+            if guess.upper() == 'EXIT':
+                play2_exit = 1
+                print('Client exit')
+                ThreadCount -= 1
+                print('Thread Number: ' + str(ThreadCount))
+                return
+
             print('primit')
             if len(guess) == 1:
                 if guess in guessedLetters:
@@ -145,7 +159,7 @@ def multi_threaded_client2(connection):
                     time.sleep(1)
                     print('trimis')
 
-            if len(guess) > 1 and len(guess) < len(cuvant):
+            if 1 < len(guess) < len(cuvant) or 1 < len(guess) > len(cuvant):
                 connection.sendall(str.encode('\nCuvant: ' + word_completion + '\nTries: ' + str(
                     tries) + '\nDescriere: ' + descriere + '\nPoti pune o litera sau tot cuvantul doar'))
                 time.sleep(1)
@@ -164,13 +178,27 @@ def multi_threaded_client2(connection):
             reset()
 
 
+def multi_threaded_client2(connection):
+    global guessedLetters, tries, word_completion, guessedWords, guessed, play2, score, ThreadCount
+    response = '2'
+    connection.sendall(str.encode(response))
+    score = 0
+    game_client2(connection)
+    connection.close
+
+
 while True:
     Client, address = ServerSideSocket.accept()
     print('Connected to: ' + address[0] + ':' + str(address[1]))
     ThreadCount += 1
+    if ThreadCount == 10:
+        break
     if ThreadCount == 1:
-            start_new_thread(multi_threaded_client, (Client,))
+        start_new_thread(multi_threaded_client, (Client,))
     if ThreadCount == 2:
         start_new_thread(multi_threaded_client2, (Client,))
+
     print('Thread Number: ' + str(ThreadCount))
 
+ServerSideSocket.close()
+sys.exit()
